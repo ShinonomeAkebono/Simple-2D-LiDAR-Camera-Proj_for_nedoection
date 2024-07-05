@@ -34,21 +34,18 @@ class LiDARCameraProjectionNode(Node):
 
         self.latest_image = None
         self.latest_scan = None
-
-        self.base_tf_name = "base_link"
         self.camera_tf_name = "camera_link"
         self.camera_optical_tf_name = "camera_rgb_optical_frame"
-        self.LiDAR_tf_name = "base_scan"
+        self.LiDAR_tf_name = "lidar"
 
         self.camera_intrinsic_matrix = np.array([
-            1696.80268, 0.0, 960.5,
-            0.0, 1696.80268, 540.5,
+            1.4546492098745316e+03, 0.0, 1314,
+            0.0, 1.4500271579809898e+03, 618.2,
             0.0, 0.0, 1.0
         ]).reshape(3, 3)
         
         self.initialize = False
 
-        self.T_camera_LIDAR = None
         self.projection_matrix = None
 
     def image_callback(self, image_msg: Image):
@@ -74,7 +71,7 @@ class LiDARCameraProjectionNode(Node):
     def projection_callback(self):
         if not self.initialize:
             camera_lidar_transform = self.lookup_transform(self.camera_tf_name, self.LiDAR_tf_name)
-            camera_base_transform = self.lookup_transform(self.camera_optical_tf_name, self.base_tf_name)
+            camera_base_transform = self.lookup_transform(self.camera_optical_tf_name, self.camera_tf_name)
 
             if camera_lidar_transform:
                 translation = camera_lidar_transform.transform.translation
@@ -84,6 +81,7 @@ class LiDARCameraProjectionNode(Node):
                     quaternion_to_rotation_matrix(quaternion.x, quaternion.y, quaternion.z, quaternion.w),
                     np.array([translation.x, translation.y, translation.z])
                 )
+            
             if camera_base_transform:
                 translation = camera_base_transform.transform.translation
                 quaternion = camera_base_transform.transform.rotation
@@ -102,21 +100,22 @@ class LiDARCameraProjectionNode(Node):
         
         if self.initialize and not self.latest_image is None and not self.latest_scan is None:
             debug_image = self.latest_image.copy()
+            print(self.T_LiDAR_camera)
 
             for point in pc2.read_points(self.latest_scan, skip_nans=True):
-                P_scan = np.array([point[0], point[1], point[2], 1.0])
+                P_scan = np.array([point[0], point[1], point[2], 1.0]).reshape(4,1)
                 P_camera = self.T_LiDAR_camera @ P_scan
-
-                if P_camera[0] < 0:
+                if P_camera[2] < 0:
                     continue
-                P_image = self.projection_matrix @ P_camera
+                projection = np.hstack((self.camera_intrinsic_matrix,np.zeros((3,1))))
+                P_image = projection @ P_camera
 
                 image_x = P_image[0] / P_image[2]
                 image_y = P_image[1] / P_image[2]
 
                 if 0 <= image_x <= self.latest_image.shape[1] and 0 <= image_y <= self.latest_image.shape[0]:
                     circle_r = 6 - int(np.linalg.norm(P_scan) / 3.0 * 3)
-                    cv2.circle(debug_image, (int(image_x), int(image_y)), circle_r, (0, 0, 255), -1)
+                    cv2.circle(debug_image, (int(2560-image_x), int(1440-image_y)), np.abs(circle_r), (0, 0, 255), -1)
 
             resize_image = cv2.resize(debug_image, (debug_image.shape[1] // 2, debug_image.shape[0] // 2))
             cv2.imshow('Camera Image', resize_image)

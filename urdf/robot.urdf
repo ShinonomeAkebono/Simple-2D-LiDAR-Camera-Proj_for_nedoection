@@ -7,7 +7,7 @@
     <joint name="base_to_camera" type="fixed">
         <parent link="base_link"/>
         <child link="camera_link"/>
-        <origin xyz="0.11 0.015 0.065" rpy="1.57079 0.0 -1.57079"/>
+        <origin xyz="0.0 -0.135 -0.145" rpy="1.57079 0.0 1.57079"/>
     </joint>
 
     <link name="camera_link"/>
@@ -15,17 +15,17 @@
     <joint name="camera_to_optical" type="fixed">
         <parent link="camera_link"/>
         <child link="camera_rgb_optical_frame"/>
-        <origin xyz="0 0 0.02745" rpy="0 0 0" />
+        <origin xyz="0.0 0 0.0" rpy="0 0 0" />
     </joint>
 
     <link name="camera_rgb_optical_frame" />
 
-    <joint name="base_to_scan" type="fixed">
+    <joint name="base_to_lidar" type="fixed">
         <parent link="base_link"/>
-        <child link="base_scan"/>
-        <origin xyz="0.046 0.0 0.107" rpy="0.0 0.0 -1.57079"/>
+        <child link="lidar"/>
+        <origin xyz="0.0 0.0 -.003" rpy="0.0 0.0 0.0"/>
     </joint>
 
-    <link name="base_scan"/>
+    <link name="lidar"/>
 
 </robot>

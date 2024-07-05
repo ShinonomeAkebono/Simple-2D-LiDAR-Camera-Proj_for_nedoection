@@ -21,9 +21,9 @@ def generate_launch_description():
             parameters=[{'robot_description':robot_description}],
             arguments=[urdf]
         ),
-        Node(
+        #Node(
             ## Configure the TF of the robot to the origin of the map coordinatesf
-            package='lidar_camera_projection',
-            executable='lidar_camera_projection_node'
-        )
+        #    package='lidar_camera_projection',
+        #    executable='lidar_camera_projection_node'
+        #)
     ])
